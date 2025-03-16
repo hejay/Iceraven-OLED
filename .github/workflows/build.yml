@@ -13,9 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Clear apktool framework directory
-        run: apktool empty-framework-dir
+      - uses: actions/checkout@v4  
       - name: Install Dependencies
         run: |
           sudo apt update
@@ -25,6 +23,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+      - name: Clear apktool framework directory
+        run: apktool empty-framework-dir
       - name: Get Latest IceRaven ARM64 Release
         id: get_release
         run: |
