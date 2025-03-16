@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Clear apktool framework directory
+        run: apktool empty-framework-dir
       - name: Install Dependencies
         run: |
           sudo apt update
