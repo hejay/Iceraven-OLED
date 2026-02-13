@@ -24,4 +24,4 @@ java -jar apktool.jar b iceraven-patched -o iceraven-patched.apk --use-aapt2
 zipalign 4 iceraven-patched.apk iceraven-patched-signed.apk
 
 # Clean up
-rm -rf iceraven-patched iceraven-patch ed.apk
+rm -rf iceraven-patched iceraven-patched.apk
