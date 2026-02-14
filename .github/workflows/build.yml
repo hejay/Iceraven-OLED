@@ -69,23 +69,46 @@ jobs:
           wget -q "${{ steps.get_upstream_release.outputs.LATEST_RELEASE }}" -O iceraven.apk
       - name: Run Build Script
         if: steps.version_check.outputs.NEW_VERSION_AVAILABLE == 'true'
-        run: bash build.sh
+        run: bash build.sh       
       - name: Sign APK
         if: steps.version_check.outputs.NEW_VERSION_AVAILABLE == 'true'
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE }}
+          KS_PASS: ${{ secrets.KEYSTORE_PASSPHRASE }}
+          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "${{ secrets.KEYSTORE }}" | base64 -di > keystore.jks
-          apksigner sign --ks keystore.jks --ks-pass pass:${{ secrets.KEYSTORE_PASSPHRASE }} --key-pass pass:${{ secrets.KEY_PASSWORD }} iceraven-patched-signed.apk
+          set -euo pipefail
+
+          # Decode keystore safely (avoid extra newline issues)
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > keystore.jks
+
+          echo "APKs present:"
+          ls -lah *.apk || true
+
+          INPUT_APK="iceraven-patched-signed.apk"
+          if [ ! -f "$INPUT_APK" ]; then
+            echo "ERROR: Missing expected aligned APK: $INPUT_APK"
+            exit 1
+          fi
+
+          # Sign -> produce final file
+          apksigner sign \
+            --ks keystore.jks \
+            --ks-pass "pass:$KS_PASS" \
+            --key-pass "pass:$KEY_PASS" \
+            --out iceraven-dark-signed.apk \
+            "$INPUT_APK"
+
+          apksigner verify --verbose iceraven-dark-signed.apk
+
       - name: Upload APK as Artifact
         if: steps.version_check.outputs.NEW_VERSION_AVAILABLE == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: iceraven-dark-apk
-          path: iceraven-patched-signed.apk
-      # -------------------------------------------------
+          path: iceraven-dark-signed.apk
 
       - name: Create Release
-        id: create_release
-        # The condition now directly uses the output from the version_check step
         if: steps.version_check.outputs.NEW_VERSION_AVAILABLE == 'true'
         uses: softprops/action-gh-release@v1
         env:
@@ -95,8 +118,7 @@ jobs:
           name: IceRaven Dark Theme ${{ steps.get_upstream_release.outputs.ICERAVEN_VERSION }}
           body: |
             Automatic release of IceRaven Dark Theme based on upstream version ${{ steps.get_upstream_release.outputs.ICERAVEN_VERSION }}.
-            
-            This APK is automatically built and patched for a dark theme.
-          files: iceraven-patched-signed.apk
 
-      # Removed the second "Get latest release info" step, as it's now handled upfront.
+            This APK is automatically built and patched for a dark theme.
+          files: iceraven-dark-signed.apk
+
