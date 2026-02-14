@@ -51,18 +51,17 @@ jobs:
         run: |
           UPSTREAM_VERSION="${{ steps.get_upstream_release.outputs.ICERAVEN_VERSION }}"
           THIS_REPO_VERSION="${{ steps.this_repo_latest_release.outputs.tag_name }}"
-
+      
           echo "Upstream IceRaven version: $UPSTREAM_VERSION"
           echo "This repository's latest release version: ${THIS_REPO_VERSION:-"No previous release found."}"
-
+      
           if [ "$UPSTREAM_VERSION" != "$THIS_REPO_VERSION" ]; then
-            echo "::set-output name=NEW_VERSION_AVAILABLE::true"
+            echo "NEW_VERSION_AVAILABLE=true" >> $GITHUB_OUTPUT
             echo "New version available! Building and releasing."
           else
-            echo "::set-output name=NEW_VERSION_AVAILABLE::false"
+            echo "NEW_VERSION_AVAILABLE=false" >> $GITHUB_OUTPUT
             echo "No new version from upstream. Skipping build and release."
           fi
-      
       # --- Conditional steps based on version_check ---
       - name: Download Latest APK
         if: steps.version_check.outputs.NEW_VERSION_AVAILABLE == 'true'
